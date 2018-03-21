@@ -1,7 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <inttypes.h>
+#include <math.h>
 
+
+/* this hash table only stores 64bit keys, no value is stored*/
+#define SPARSE_RATIO 10
+
+uint64_t divider   =4398046511105; //2*42*+1
+uint64_t uint64_max=18446744073709551615; //2**64-1
 
 typedef struct {
   int lines;
@@ -10,7 +19,7 @@ typedef struct {
 
 void read_file_to_lines(char*, Lines *);
 void print_words( Lines *);
-
+void insert_lines_into_ht(Lines *, unsigned char *);
 
 
 
@@ -18,8 +27,17 @@ int main(int argc, char **argv){
     char ** words;
     Lines l;
     read_file_to_lines(argv[1], &l);
-    print_words(&l);
+    //print_words(&l);
+    int ht_len = l.lines*SPARSE_RATIO;
+    
+    unsigned char ht[uint64_max/divider];
+    
+    int i;
+    for(i=0; i<uint64_max/divider; i++){
+        ht[i]=0;
+    }
 
+    insert_lines_into_ht(&l, &ht);
 }
 
 void print_words(Lines *l){
@@ -27,8 +45,30 @@ void print_words(Lines *l){
     for(i=0; i<l->lines; i++){
         printf("%s\n", l->words[i]);
     }
+}
+
+
+
+void insert_lines_into_ht(Lines *l, unsigned char * ht){
+    int i;
+    uint64_t x;
+    int hash_idx;
+
+    for(i=0; i<l->lines; i++){
+        l->words[i][strlen(l->words[i])]=0;
+        x=strtoull(l->words[i], NULL, 10);
+        hash_idx = (x/(uint64_t)divider); 
+        ht[hash_idx]+=1;
+        //printf("%s, %llu\n", l->words[i], x);
+        //printf("%llu, %d\n", x, hash_idx );
+    }
+
+    for(i=0; i<uint64_max/divider; i++){
+        printf("%u\n", ht[i]);
+    }
 
 }
+
 
 void read_file_to_lines(char* file, Lines *l){
     int lines_allocated = 128;
